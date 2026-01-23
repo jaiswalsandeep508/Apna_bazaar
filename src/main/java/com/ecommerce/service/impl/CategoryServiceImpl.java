@@ -10,9 +10,14 @@ import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -51,12 +56,30 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void deleteCategory(Long id) {
-
+        Category findCategoryById = getCategoryIfExists(id);
+        categoryRepository.delete(findCategoryById);
     }
 
     @Override
     public CategoryResponsePageDTO getAllCategories(int pageNumber, int pageSize, String sortBy, String sortDir) {
-        return null;
+        Sort sort =  sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(pageNumber,pageSize,sort);
+        Page<Category> categoriesPage = categoryRepository.findAll(pageable);
+        List<CategoryResponseDTO> content = categoriesPage.getContent()
+                .stream().map(category ->
+                        modelMapper.map(category,CategoryResponseDTO.class)).toList();
+        CategoryResponsePageDTO categoryResponsePageDTO = new CategoryResponsePageDTO();
+        categoryResponsePageDTO.setResponse(content);
+        categoryResponsePageDTO.setTotalPages(categoriesPage.getTotalPages());
+        categoryResponsePageDTO.setTotalElements(categoriesPage.getTotalElements());
+        categoryResponsePageDTO.setPageNumber(categoriesPage.getNumber());
+        categoryResponsePageDTO.setPageSize(categoriesPage.getSize());
+        categoryResponsePageDTO.setLast(categoriesPage.isLast());
+
+        return categoryResponsePageDTO;
     }
 
 
