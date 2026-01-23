@@ -29,4 +29,12 @@ public class MyGlobalExceptionHandler {
         exceptionResponseDTO.setStatus("Failed");
         return new ResponseEntity<>(exceptionResponseDTO, HttpStatus.CONFLICT);
     }
+
+    @ExceptionHandler(ResourceNotExistsException.class)
+    public ResponseEntity<ExceptionResponseDTO> resourceNotExists(ResourceNotExistsException resource) {
+        ExceptionResponseDTO exceptionResponseDTO = new ExceptionResponseDTO();
+        exceptionResponseDTO.setMessage(resource.getMessage());
+        exceptionResponseDTO.setStatus("Failed");
+        return new ResponseEntity<>(exceptionResponseDTO, HttpStatus.NOT_FOUND);
+    }
 }

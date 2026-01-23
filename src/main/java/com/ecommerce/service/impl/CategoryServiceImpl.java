@@ -4,6 +4,7 @@ import com.ecommerce.dto.request.CategoryRequestDTO;
 import com.ecommerce.dto.response.CategoryResponseDTO;
 import com.ecommerce.dto.response.CategoryResponsePageDTO;
 import com.ecommerce.exception.ResourceAlreadyExistsException;
+import com.ecommerce.exception.ResourceNotExistsException;
 import com.ecommerce.model.Category;
 import com.ecommerce.repository.CategoryRepository;
 import com.ecommerce.service.CategoryService;
@@ -30,20 +31,22 @@ public class CategoryServiceImpl implements CategoryService {
         return modelMapper.map(category,CategoryResponseDTO.class);
     }
 
-    private void ValidateCategoryNameNotExists(String name) {
-        if(categoryRepository.existsByName(name)){
-            throw new ResourceAlreadyExistsException("Category already exists with name " + name);
-        }
-    }
-
     @Override
     public CategoryResponseDTO getCategoryById(Long id) {
-        return null;
+        Category findCategoryById = getCategoryIfExists(id);
+        return modelMapper.map(findCategoryById, CategoryResponseDTO.class);
     }
 
     @Override
     public CategoryResponseDTO updateCategory(Long id, CategoryRequestDTO dto) {
-        return null;
+        Category findCategoryById = getCategoryIfExists(id);
+        ValidateCategoryNameNotExists(dto.getName());
+        findCategoryById.setName(dto.getName());
+        findCategoryById.setDescription(dto.getDescription());
+        findCategoryById.setUpdatedAt(LocalDateTime.now());
+        categoryRepository.save(findCategoryById);
+
+        return modelMapper.map(findCategoryById, CategoryResponseDTO.class);
     }
 
     @Override
@@ -54,5 +57,18 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponsePageDTO getAllCategories(int pageNumber, int pageSize, String sortBy, String sortDir) {
         return null;
+    }
+
+
+//    --------------Helper class---------------------
+    private void ValidateCategoryNameNotExists(String name) {
+        if(categoryRepository.existsByName(name)){
+            throw new ResourceAlreadyExistsException("Category already exists with name " + name);
+        }
+    }
+
+    private Category getCategoryIfExists(Long id) {
+        return categoryRepository.findById(id).orElseThrow(() ->
+                new ResourceNotExistsException("Category not exist with category id " + id));
     }
 }
